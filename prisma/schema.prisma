@@ -1,0 +1,73 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum StatusOrder {
+  PROCESSING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id          Int     @id @default(autoincrement())
+  username    String  @unique @db.VarChar(50)
+  password    String
+  role        Role    @default(CUSTOMER)
+  address     String  @db.VarChar(50)
+  email       String  @unique @db.VarChar(50)
+  phoneNumber String  @default("000-000-0000")
+  orders      Order[]
+  menus       Menu[]
+}
+
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique
+  menus Menu[]
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  orderItems OrderItem[]
+  amount     Int         @default(1)
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id])
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  status     StatusOrder @default(PROCESSING)
+}
+
+model Menu {
+  id         Int         @id @default(autoincrement())
+  name       String
+  picture    String?
+  price      Int
+  categoryId String
+  category   Category    @relation(fields: [categoryId], references: [id])
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model OrderItem {
+  id       String @id @default(uuid())
+  menuId   Int
+  orderId  String
+  menu     Menu   @relation(fields: [menuId], references: [id])
+  order    Order  @relation(fields: [orderId], references: [id])
+  quantity Int    @default(1)
+}
